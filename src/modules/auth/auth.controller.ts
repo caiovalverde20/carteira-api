@@ -9,7 +9,7 @@ export class AuthController {
   constructor(private authService: AuthService) {}
 
   @Post('login')
-  @ApiOperation({ summary: 'Realiza o login do usuário' })
+  @ApiOperation({ summary: 'Realiza o login do usuário e devolve um token JWT que dura 1 hora' })
   @ApiResponse({ status: 200, description: 'Login realizado com sucesso.' })
   @ApiResponse({ status: 400, description: 'Credenciais inválidas.' })
   async login(@Body() loginDto: LoginDto) {
