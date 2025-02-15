@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UserModule } from './modules/user/user.module';
+import { AuthModule } from './modules/auth/auth.module';
 
 console.log('Conectando ao banco:', process.env.DB_NAME);
 
@@ -19,6 +20,7 @@ console.log('Conectando ao banco:', process.env.DB_NAME);
       synchronize: process.env.NODE_ENV !== 'production',
     }),
     UserModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
