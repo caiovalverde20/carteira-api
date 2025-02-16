@@ -1,99 +1,118 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Carteira API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A **Carteira API** é uma aplicação que simula transferências seguras entre usuários. Com ela, é possível realizar transferências, estornos e visualizar o histórico de transações.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Tecnologias Utilizadas
 
-## Description
+- **NestJS** – Framework backend
+- **PostgreSQL** – Banco de dados relacional (utilizando TypeORM)
+- **TypeORM** – ORM para manipulação do banco de dados
+- **Docker** – Facilita o deploy e o desenvolvimento local
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Deploy
 
-## Project setup
+A API está disponível no Render:  
+[https://carteira-api.onrender.com](https://carteira-api.onrender.com)
 
-```bash
-$ npm install
-```
+A documentação Swagger da API pode ser acessada em:  
+[https://carteira-api.onrender.com/api](https://carteira-api.onrender.com/api)
 
-## Compile and run the project
+## Diagrama ER
 
-```bash
-# development
-$ npm run start
+![Diagrama ER](./docs/ER-diagram.png)
 
-# watch mode
-$ npm run start:dev
+Como o foco o foco são as transferencias, os users criados automaticamente ganham 1000 reais e 1000 dolares em suas respectivas wallets para testar. O user não pode criar wallets diretamente atráves de alguma rota.
+As transferencias tem 3 estados
+- Successful - Acontece quando uma transferencia foi concluida normalmente e o user que fez o pagamento não pediu estorno. O usuário pode solicitar o estorno da transação dentro de um prazo de 7 dias.
+- Reversed  - O usuário recebeu seu estorno e não podem ocorrer mais alterações nessa transação
+- Reversed_failed - Acontece quando o destinatário não possuí saldo o suficiente. Dentro desse estado não se tem mais a limitação de tempo e o usuário pode pedir quantas vezes quiser até o destinatário ter saldo.
 
-# production mode
-$ npm run start:prod
-```
+## Concorrência e Transações Atômicas  
 
-## Run tests
+As operações de transferência e estorno são atômicas, garantindo que cada transação ocorra completamente ou seja completamente revertida em caso de falha.
 
-```bash
-# unit tests
-$ npm run test
+- Foi utilizado o **TypeORM** com **QueryRunner** para fazer as transações de forma atômica  
+- **Locks pessimistas** foram aplicadas nas carteiras durante as operações para evitar condições de corrida.  
+- Em caso de falha, a transação é **desfeita automaticamente** (`rollback`).  
 
-# e2e tests
-$ npm run test:e2e
+Isso assegura que **nenhuma transferência seja parcial ou inconsistente**, mesmo com múltiplas transações concorrentes.  
 
-# test coverage
-$ npm run test:cov
-```
 
-## Deployment
+## Como Executar o Projeto
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+### Com Docker
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+1. Clone este repositório:
+   ```bash
+   git clone https://github.com/caiovalverde20/carteira-api.git
+   cd carteira-api
+   ```
 
-```bash
-$ npm install -g mau
-$ mau deploy
-```
+2. (Opcional) Crie um arquivo `.env` na raiz do projeto com as variáveis de ambiente necessárias:
+   ```env
+   DB_HOST=localhost
+   DB_PORT=5432
+   DB_USER=seu_usuario
+   DB_PASS=sua_senha
+   DB_NAME=carteiradb
+   JWT_SECRET=secret
+   NODE_ENV=development
+   PORT=3000
+   ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+3. Construa e inicie os containers:
+   ```bash
+   docker-compose up --build
+   ```
 
-## Resources
+4. As tabelas serão criadas automaticamente (utilizando `synchronize: true` em ambiente de desenvolvimento).  
+   Acesse a API em: [http://localhost:3000](http://localhost:3000) ou [http://localhost:3000/api](http://localhost:3000/api) para ir direto para a documentação do swagger
 
-Check out a few resources that may come in handy when working with NestJS:
+### Sem Docker
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+1. Clone este repositório:
+   ```bash
+   git clone https://github.com/caiovalverde20/carteira-api.git
+   cd carteira-api
+   ```
 
-## Support
+2. Instale as dependências:
+   ```bash
+   npm install
+   ```
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+3. Crie um arquivo `.env` na raiz do projeto com as variáveis de ambiente:
+   ```env
+   DB_HOST=localhost
+   DB_PORT=5432
+   DB_USER=seu_usuario
+   DB_PASS=sua_senha
+   DB_NAME=carteiradb
+   JWT_SECRET=secret
+   NODE_ENV=development
+   PORT=3000
+   ```
 
-## Stay in touch
+4. Compile o projeto:
+   ```bash
+   npm run build
+   ```
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+5. Inicie a aplicação:
+   ```bash
+   npm run start:prod
+   ```
 
-## License
+6. Acesse a API em: [http://localhost:3000](http://localhost:3000) ou [http://localhost:3000/api](http://localhost:3000/api) para ir direto para a documentação do swagger
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+## Endpoints Principais
+
+- **Transferência**: `POST /transactions/transfer`  
+  Realiza uma transferência entre carteiras.
+
+- **Estorno**: `POST /transactions/refund`  
+  Solicita o estorno de uma transação realizada em até 7 dias. Se o destinatário não tiver saldo suficiente, o estorno falha, mas pode ser tentado novamente a qualquer momento.
+
+- **Histórico**: `GET /transactions/history`  
+  Retorna o histórico de transações do usuário.
+
