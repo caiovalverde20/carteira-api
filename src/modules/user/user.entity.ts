@@ -1,5 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
 import { Exclude } from 'class-transformer';
+import { Wallet } from '../wallet/wallet.entity';
 
 @Entity()
 export class User {
@@ -15,5 +16,8 @@ export class User {
   @Column()
   @Exclude()
   senha: string;
+
+  @OneToMany(() => Wallet, wallet => wallet.user, { cascade: true })
+  wallets: Wallet[];
 
 }

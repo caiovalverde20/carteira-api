@@ -1,10 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import * as bcrypt from 'bcrypt';
-import { ConflictException } from '@nestjs/common';
+import { WalletService } from '../wallet/wallet.service';
 
 const saltRounds = process.env.BCRYPT_SALT_ROUNDS
   ? parseInt(process.env.BCRYPT_SALT_ROUNDS, 10)
@@ -15,6 +15,7 @@ export class UserService {
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    private walletService: WalletService,
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<User> {
@@ -22,13 +23,17 @@ export class UserService {
     if (existingUser) {
       throw new ConflictException('Email já cadastrado.');
     }
+
     const hashedPassword = await bcrypt.hash(createUserDto.senha, saltRounds);
     const user = this.userRepository.create({
       nome: createUserDto.nome,
       email: createUserDto.email,
       senha: hashedPassword,
     });
-    return this.userRepository.save(user);
-  }
+    const savedUser = await this.userRepository.save(user);
 
+    await this.walletService.createDefaultWallets(savedUser);
+
+    return savedUser;
+  }
 }

@@ -5,10 +5,13 @@ import { TestAppModule } from './test-app.module';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../src/modules/user/user.entity';
+import { Wallet } from '../src/modules/wallet/wallet.entity';
+import * as jwt from 'jsonwebtoken';
 
 describe('Users - e2e', () => {
   let app: INestApplication;
   let userRepository: Repository<User>;
+  let walletRepository: Repository<Wallet>;
   let moduleFixture: TestingModule;
 
   beforeAll(async () => {
@@ -17,7 +20,6 @@ describe('Users - e2e', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
-
     app.useGlobalPipes(
       new ValidationPipe({
         whitelist: true,
@@ -25,13 +27,14 @@ describe('Users - e2e', () => {
         forbidNonWhitelisted: true,
       }),
     );
-
     await app.init();
 
     userRepository = moduleFixture.get<Repository<User>>(getRepositoryToken(User));
+    walletRepository = moduleFixture.get<Repository<Wallet>>(getRepositoryToken(Wallet));
   });
 
   afterEach(async () => {
+    await walletRepository.clear();
     await userRepository.clear();
   });
 
@@ -40,7 +43,7 @@ describe('Users - e2e', () => {
     await moduleFixture.close();
   });
 
-  it('Deve registrar um usuário com sucesso', async () => {
+  it('Deve registrar um usuário com sucesso e criar as carteiras padrão', async () => {
     const response = await request(app.getHttpServer())
       .post('/users/register')
       .send({ nome: 'Teste', email: 'teste@mail.com', senha: 'senha123' });
@@ -48,6 +51,15 @@ describe('Users - e2e', () => {
     expect(response.status).toBe(201);
     expect(response.body).toHaveProperty('id');
     expect(response.body.email).toBe('teste@mail.com');
+
+    const token = jwt.sign({ id: response.body.id, email: response.body.email }, process.env.JWT_SECRET || 'secret');
+
+    const walletResponse = await request(app.getHttpServer())
+      .get('/wallets')
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(walletResponse.status).toBe(200);
+    expect(walletResponse.body.length).toBe(2);
   });
 
   it('Deve rejeitar email duplicado', async () => {
