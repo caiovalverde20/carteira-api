@@ -20,6 +20,9 @@ console.log('Conectando ao banco:', process.env.DB_NAME);
       database: process.env.DB_NAME || 'carteiradb', 
       entities: [__dirname + '/**/*.entity.js'],
       synchronize: process.env.NODE_ENV !== 'production',
+      ssl: {
+        rejectUnauthorized: false,
+      },
     }),
     UserModule,
     AuthModule,
