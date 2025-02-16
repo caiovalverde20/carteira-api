@@ -5,6 +5,7 @@ import { AppService } from './app.service';
 import { UserModule } from './modules/user/user.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { WalletModule } from './modules/wallet/wallet.module';
+import { TransactionModule } from './modules/transaction/transaction.module';
 
 console.log('Conectando ao banco:', process.env.DB_NAME);
 
@@ -23,6 +24,7 @@ console.log('Conectando ao banco:', process.env.DB_NAME);
     UserModule,
     AuthModule,
     WalletModule,
+    TransactionModule,
   ],
   controllers: [AppController],
   providers: [AppService],
