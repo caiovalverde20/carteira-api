@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Request } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Request, Get } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { TransactionService } from './transaction.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -40,4 +40,11 @@ export class TransactionController {
     return await this.transactionService.refundTransaction(userId, refundDto.transactionId);
   }
 
+  @Get('history')
+  @ApiOperation({ summary: 'Retorna o histórico de transações do usuário' })
+  @ApiResponse({ status: 200, description: 'Lista de transações envolvendo o usuário.' })
+  async getHistory(@Request() req) {
+    const userId = req.user.id;
+    return this.transactionService.getTransactionHistory(userId);
+  }
 }

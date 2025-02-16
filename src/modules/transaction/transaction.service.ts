@@ -93,6 +93,21 @@ export class TransactionService {
     }
   }
 
+  async getTransactionHistory(userId: string) {
+    const transactionRepo = this.dataSource.getRepository(Transaction);
+  
+    const transactions = await transactionRepo.find({
+      where: [
+        { fromWallet: { user: { id: userId } } },
+        { toWallet: { user: { id: userId } } },
+      ],
+      relations: ['fromWallet', 'fromWallet.user', 'toWallet', 'toWallet.user'],
+      order: { createdAt: 'DESC' },
+    });
+  
+    return transactions.map((t) => this.buildTransactionHistory(t));
+  }
+
   private async getWalletForUser(
     queryRunner: QueryRunner,
     userId: string,
@@ -153,6 +168,25 @@ export class TransactionService {
       toWallet: {
         id: toWallet.id,
         currency: toWallet.currency,
+      },
+    };
+  }
+
+  private buildTransactionHistory(transaction: Transaction) {
+    return {
+      id: transaction.id,
+      amount: Number(transaction.amount),
+      createdAt: transaction.createdAt,
+      status: transaction.status,
+      fromWallet: {
+        id: transaction.fromWallet.id,
+        currency: transaction.fromWallet.currency,
+        userId: transaction.fromWallet.user.id,
+      },
+      toWallet: {
+        id: transaction.toWallet.id,
+        currency: transaction.toWallet.currency,
+        userId: transaction.toWallet.user.id,
       },
     };
   }
