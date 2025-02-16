@@ -3,6 +3,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagg
 import { TransactionService } from './transaction.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { TransferDto } from './dto/transfer.dto';
+import { RefundDto } from './dto/RefundDto';
 
 @ApiTags('transactions')
 @ApiBearerAuth()
@@ -12,7 +13,7 @@ export class TransactionController {
   constructor(private transactionService: TransactionService) {}
 
   @Post('transfer')
-  @ApiOperation({ summary: 'Realiza uma transferência...' })
+  @ApiOperation({ summary: 'Realiza uma transferência' })
   @ApiResponse({ status: 200, description: 'Transferência realizada com sucesso.' })
   @ApiResponse({ status: 400, description: 'Erro na transferência.' })
   async transfer(@Body() transferDto: TransferDto, @Request() req) {
@@ -29,4 +30,14 @@ export class TransactionController {
   
     return transaction;
   }
+  
+  @Post('refund')
+  @ApiOperation({ summary: 'Solicita estorno de uma transação' ,
+    description: 'Permite reverter uma transação realizada em até 7 dias. Se o destinatário não tiver saldo suficiente, o estorno falha, mas pode ser tentado novamente a qualquer momento.'})
+  @ApiResponse({ status: 200, description: 'Estorno realizado com sucesso.' })
+  async refund(@Body() refundDto: RefundDto, @Request() req) {
+    const userId = req.user.id;
+    return await this.transactionService.refundTransaction(userId, refundDto.transactionId);
+  }
+
 }
