@@ -17,12 +17,14 @@ console.log('Conectando ao banco:', process.env.DB_NAME);
       port: Number(process.env.DB_PORT) || 5432,
       username: process.env.DB_USER || 'user',
       password: process.env.DB_PASS || 'pass',
-      database: process.env.DB_NAME || 'carteiradb', 
+      database: process.env.DB_NAME || 'carteiradb',
       entities: [__dirname + '/**/*.entity.js'],
       synchronize: process.env.NODE_ENV !== 'production',
-      ssl: {
-        rejectUnauthorized: false,
-      },
+      ...(process.env.DB_SSL === 'true' && {
+        ssl: {
+          rejectUnauthorized: false,
+        },
+      }),
     }),
     UserModule,
     AuthModule,
