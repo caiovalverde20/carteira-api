@@ -130,3 +130,7 @@ Todas as rotas estão testadas. Para rodar os testes:
   npm run test:e2e
   ```
 
+## Monitoramente com Prometheus/grafana
+
+O sistema coleta métricas (logins, transações, latência, etc.) por meio do Prometheus e as exibe em dashboards no Grafana.
+Em ambiente local, acesse o Grafana em: [http://localhost:3001](http://localhost:3001)

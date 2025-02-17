@@ -2,12 +2,16 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
+import { MetricsInterceptor } from './common/metrics/metrics.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.enableCors();
-  
+
+  const metricsInterceptor = app.get(MetricsInterceptor);
+  app.useGlobalInterceptors(metricsInterceptor);
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true, 

@@ -3,10 +3,18 @@ import { DataSource, QueryRunner } from 'typeorm';
 import { Wallet } from '../wallet/wallet.entity';
 import { Transaction } from './transaction.entity';
 import { User } from '../user/user.entity';
+import { InjectMetric } from '@willsoto/nestjs-prometheus';
+import { Counter } from 'prom-client';
 
 @Injectable()
 export class TransactionService {
-  constructor(private dataSource: DataSource) {}
+  constructor(
+    private dataSource: DataSource,
+    @InjectMetric('transaction_success_total')
+    private readonly successCounter: Counter<string>,
+    @InjectMetric('transaction_failure_total')
+    private readonly failureCounter: Counter<string>,
+  ) {}
 
   async transferByEmail(senderId: string, toEmail: string, currency: string, amount: number): Promise<Transaction> {
     if (amount <= 0) throw new BadRequestException('O valor da transferência deve ser maior que zero');
@@ -32,8 +40,12 @@ export class TransactionService {
       const transaction = await this.recordTransaction(queryRunner, fromWallet, toWallet, amount, 'SUCCESS');
 
       await queryRunner.commitTransaction();
+
+      this.successCounter.inc({ type: 'transfer' });
+
       return transaction;
     } catch (error) {
+      this.failureCounter.inc({ type: 'transfer' });
       await queryRunner.rollbackTransaction();
       throw error;
     } finally {
@@ -73,6 +85,7 @@ export class TransactionService {
         await queryRunner.manager.save(Transaction, transaction);
         await queryRunner.commitTransaction();
         await queryRunner.release();
+        this.failureCounter.inc({ type: 'refund' });
         throw new BadRequestException('O destinatário não tem saldo suficiente para o estorno.');
       }
   
@@ -83,12 +96,15 @@ export class TransactionService {
       await queryRunner.commitTransaction();
       await queryRunner.release();
   
+      this.successCounter.inc({ type: 'refund' });
+  
       return this.buildRefundResponse(transaction);
     } catch (error) {
       if (queryRunner.isTransactionActive) {
         await queryRunner.rollbackTransaction();
       }
       await queryRunner.release();
+      this.failureCounter.inc({ type: 'refund' });
       throw error;
     }
   }
@@ -190,5 +206,4 @@ export class TransactionService {
       },
     };
   }
-  
 }

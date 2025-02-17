@@ -6,6 +6,7 @@ import { UserModule } from './modules/user/user.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { WalletModule } from './modules/wallet/wallet.module';
 import { TransactionModule } from './modules/transaction/transaction.module';
+import { MetricsModule } from './common/metrics/metrics.module';
 
 console.log('Conectando ao banco:', process.env.DB_NAME);
 
@@ -26,6 +27,7 @@ console.log('Conectando ao banco:', process.env.DB_NAME);
         },
       }),
     }),
+    MetricsModule,
     UserModule,
     AuthModule,
     WalletModule,
