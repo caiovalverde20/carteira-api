@@ -14,6 +14,9 @@ const mockJwtService = {
   sign: jest.fn().mockReturnValue('fake-jwt-token'),
 };
 
+const mockLoginSuccessCounter = { inc: jest.fn() };
+const mockLoginFailureCounter = { inc: jest.fn() };
+
 describe('AuthService', () => {
   let authService: AuthService;
   let userRepository: Repository<User>;
@@ -24,6 +27,8 @@ describe('AuthService', () => {
         AuthService,
         { provide: getRepositoryToken(User), useValue: mockUserRepository },
         { provide: JwtService, useValue: mockJwtService },
+        { provide: 'PROM_METRIC_LOGIN_SUCCESS_TOTAL', useValue: mockLoginSuccessCounter },
+        { provide: 'PROM_METRIC_LOGIN_FAILURE_TOTAL', useValue: mockLoginFailureCounter },
       ],
     }).compile();
 
@@ -42,6 +47,7 @@ describe('AuthService', () => {
 
     expect(mockUserRepository.findOne).toHaveBeenCalledWith({ where: { email: loginDto.email } });
     expect(token).toBe('fake-jwt-token');
+    expect(mockLoginSuccessCounter.inc).toHaveBeenCalled();
   });
 
   it('Deve retornar null se o email não existir', async () => {
@@ -52,6 +58,7 @@ describe('AuthService', () => {
     const token = await authService.validateUser(loginDto);
 
     expect(token).toBeNull();
+    expect(mockLoginFailureCounter.inc).toHaveBeenCalled(); 
   });
 
   it('Deve retornar null se a senha estiver errada', async () => {
@@ -64,5 +71,6 @@ describe('AuthService', () => {
     const token = await authService.validateUser(loginDto);
 
     expect(token).toBeNull();
+    expect(mockLoginFailureCounter.inc).toHaveBeenCalled();
   });
 });
